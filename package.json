@@ -1,0 +1,36 @@
+{
+  "name": "dec0de",
+  "version": "0.0.0",
+  "description": "Protocol handler based on generators :stars:",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "npm run check",
+    "check": "eslint .",
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inca/dec0de.git"
+  },
+  "keywords": [
+    "protocol",
+    "decoder",
+    "handler",
+    "parser",
+    "socket",
+    "network"
+  ],
+  "author": "Boris Okunskiy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/inca/dec0de/issues"
+  },
+  "homepage": "https://github.com/inca/dec0de#readme",
+  "devDependencies": {
+    "eslint": "^3.2.0",
+    "mocha": "^2.5.3"
+  },
+  "dependencies": {
+    "debug": "^2.2.0"
+  }
+}
