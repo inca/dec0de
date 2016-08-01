@@ -43,7 +43,7 @@ class Decoder {
             }
             const data = this._buffer.slice(0, i);
             this._buffer = this._buffer.slice(i);
-            debug('match', data.length, debugVal(data));
+            debug('match', data.length);
             this._currentStep = this._iterator.next(data);
         }
         // done

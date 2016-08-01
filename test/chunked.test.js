@@ -48,6 +48,30 @@ describe('chunked-encoding decoder', () => {
             assert.equal(chunks[0], 'Hello world');
             assert.equal(chunks[1], 'Awesome!');
         });
+
+    });
+
+    context('char-by-char (async)', () => {
+
+        const out = new EventEmitter();
+        const chunks = [];
+
+        before(done => {
+            let flow = Promise.resolve();
+            const decoder = createChunkedDecoder(out);
+            out.on('chunk', chunk => chunks.push(chunk.toString()));
+            out.on('end', done);
+            const buf = readFileSync(join(__dirname, './assets/chunked.txt'));
+            for (let i = 0; i < buf.length; i++) {
+                flow = flow.then(() => decoder.decode(buf.slice(i, i + 1)));
+            }
+        });
+
+        it('should parse chunks', () => {
+            assert.equal(chunks.length, 2);
+            assert.equal(chunks[0], 'Hello world');
+            assert.equal(chunks[1], 'Awesome!');
+        });
     });
 
 });
@@ -55,7 +79,7 @@ describe('chunked-encoding decoder', () => {
 function createChunkedDecoder(out) {
 
     return new Decoder(function* readChunk() {
-        // Read length up to newline
+        // Read chunk length up to newline
         const lenBuf = yield b => b.indexOf('\n');
         const len = parseInt(lenBuf.toString(), 16);
         // Consume newline
@@ -63,11 +87,12 @@ function createChunkedDecoder(out) {
         if (len === 0) {
             out.emit('end');
         } else {
+            // Read chunk of known length
             const chunk = yield len;
-            // Read and emit chunk body
-            out.emit('chunk', chunk);
             // Consume newline
             yield '\n\n';
+            // Emit it
+            out.emit('chunk', chunk);
         }
     });
 
