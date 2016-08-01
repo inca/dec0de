@@ -4,7 +4,6 @@
   "description": "Protocol handler based on generators :stars:",
   "main": "index.js",
   "scripts": {
-    "pretest": "npm run check",
     "check": "eslint .",
     "test": "mocha"
   },

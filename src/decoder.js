@@ -8,7 +8,7 @@ class Decoder {
     constructor(generator) {
         this._generator = generator;
         this._buffer = Buffer.alloc(0);
-        this.reset();
+        this.resetState();
     }
 
     use(gen, ...args) {
@@ -19,7 +19,7 @@ class Decoder {
         }
     }
 
-    reset() {
+    resetState() {
         this._currentStep = null;
         this.use(this._generator);
     }
@@ -28,39 +28,29 @@ class Decoder {
         assert(this._iterator, 'decoder not initialized ' +
             '(make sure you call `use` before `decode`)');
         this._buffer = Buffer.concat([this._buffer, newBuffer]);
-        this._decodeNext();
-    }
-
-    _decodeNext() {
-        return this._currentStep ? this._proceed() : this._start();
-    }
-
-    _onMatch(data) {
-        debug('match', data.length);
-        this._currentStep = this._iterator.next(data);
         this._proceed();
     }
 
-    _start() {
-        this._onMatch(Buffer.alloc(0));
-    }
-
     _proceed() {
-        const step = this._currentStep;
-        if (step.done) {
-            this.reset();
-            if (this._buffer.length) {
-                this._start()
+        // start
+        if (!this._currentStep) {
+            this._currentStep = this._iterator.next(Buffer.alloc(0));
+        }
+        while (!this._currentStep.done) {
+            const i = valueToIndex(this._buffer, this._currentStep.value);
+            if (i < 0 || this._buffer.length < i) {
+                return; // wait for more data
             }
-            return;
+            const data = this._buffer.slice(0, i);
+            this._buffer = this._buffer.slice(i);
+            debug('match', data.length, debugVal(data));
+            this._currentStep = this._iterator.next(data);
         }
-        const i = valueToIndex(this._buffer, step.value);
-        if (i < 0 || this._buffer.length < i) {
-            return;
+        // done
+        this.resetState();
+        if (this._buffer.length > 0) {  // start new decode
+            this._proceed()
         }
-        const data = this._buffer.slice(0, i);
-        this._buffer = this._buffer.slice(i);
-        this._onMatch(data);
     }
 
 }
@@ -87,16 +77,17 @@ function valueToIndex(buffer, val) {
             if (prefix.equals(val)) {
                 return val.length;
             }
-            throw new Error('Expected buffer to contain ' + debugVal())
+            throw new Error('Expected buffer to contain ' + debugVal(val));
         default:
             throw new Error('Expected yield value to be one of ' +
                 'function|number|string|Buffer, instead got ' +
                 typeof val);
     }
 
-    function debugVal() {
-        return JSON.stringify(val.toString());
-    }
+}
+
+function debugVal(val) {
+    return JSON.stringify(val.toString());
 }
 
 module.exports = Decoder;
