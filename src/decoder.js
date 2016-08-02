@@ -5,10 +5,13 @@ const assert = require('assert');
 
 class Decoder {
 
-    constructor(generator) {
+    constructor(generator, settings) {
         this._generator = generator;
         this._buffer = Buffer.alloc(0);
-        this.reset();
+        this._settings = Object.assign({
+            autoRestart: true
+        }, settings);
+        this.restart();
     }
 
     use(gen, ...args) {
@@ -19,9 +22,17 @@ class Decoder {
         }
     }
 
-    reset() {
+    restart(gen, ...args) {
         this._currentStep = null;
-        this.use(this._generator);
+        if (gen) {
+            this.use(gen, ...args)
+        } else {
+            this.use(this._generator);
+        }
+        // Kick in new decode cycle
+        if (this._buffer.length > 0) {
+            this._proceed()
+        }
     }
 
     decode(newBuffer) {
@@ -37,19 +48,22 @@ class Decoder {
             this._currentStep = this._iterator.next();
         }
         while (!this._currentStep.done) {
-            const i = valueToIndex(this._buffer, this._currentStep.value);
-            if (i < 0 || this._buffer.length < i) {
-                return; // wait for more data
+            try {
+                const i = valueToIndex(this._buffer, this._currentStep.value);
+                if (i < 0 || this._buffer.length < i) {
+                    return; // wait for more data
+                }
+                const data = this._buffer.slice(0, i);
+                this._buffer = this._buffer.slice(i);
+                debug('match', data.length);
+                this._currentStep = this._iterator.next(data);
+            } catch (e) {
+                this._currentStep = this._iterator.throw(e);
             }
-            const data = this._buffer.slice(0, i);
-            this._buffer = this._buffer.slice(i);
-            debug('match', data.length);
-            this._currentStep = this._iterator.next(data);
         }
         // done
-        this.reset();
-        if (this._buffer.length > 0) {  // start new decode
-            this._proceed()
+        if (this._settings.autoRestart) {
+            this.restart();
         }
     }
 
