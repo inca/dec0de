@@ -93,7 +93,7 @@ handler can be written in a single line:
 ```es6
 function* decodeHttpRequest() {
   const line = yield buf => buf.indexOf('\r\n');
-  c
+  // handle next protocol parts (headers, body, etc.)
 }
 ```
 
