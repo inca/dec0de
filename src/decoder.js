@@ -8,7 +8,7 @@ class Decoder {
     constructor(generator) {
         this._generator = generator;
         this._buffer = Buffer.alloc(0);
-        this.resetState();
+        this.reset();
     }
 
     use(gen, ...args) {
@@ -19,7 +19,7 @@ class Decoder {
         }
     }
 
-    resetState() {
+    reset() {
         this._currentStep = null;
         this.use(this._generator);
     }
@@ -34,7 +34,7 @@ class Decoder {
     _proceed() {
         // start
         if (!this._currentStep) {
-            this._currentStep = this._iterator.next(Buffer.alloc(0));
+            this._currentStep = this._iterator.next();
         }
         while (!this._currentStep.done) {
             const i = valueToIndex(this._buffer, this._currentStep.value);
@@ -47,7 +47,7 @@ class Decoder {
             this._currentStep = this._iterator.next(data);
         }
         // done
-        this.resetState();
+        this.reset();
         if (this._buffer.length > 0) {  // start new decode
             this._proceed()
         }

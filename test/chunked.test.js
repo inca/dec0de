@@ -1,8 +1,8 @@
 'use strict';
 
 const assert = require('assert');
-const { EventEmitter } = require('events');
 const Decoder = require('../src/decoder');
+const { EventEmitter } = require('events');
 const { readFileSync } = require('fs');
 const { join } = require('path');
 
